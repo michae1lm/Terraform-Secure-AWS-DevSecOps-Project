@@ -134,8 +134,15 @@ data "aws_iam_policy_document" "access_logs" {
     effect    = "Deny"
     actions   = ["s3:*"]
     resources = [aws_s3_bucket.access_logs.arn, "${aws_s3_bucket.access_logs.arn}/*"]
-    principals { type = "*" identifiers = ["*"] }
-    condition { test = "Bool" variable = "aws:SecureTransport" values = ["false"] }
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
   }
 }
 
@@ -154,7 +161,11 @@ data "aws_iam_policy_document" "cloudtrail_bucket" {
       type        = "Service"
       identifiers = ["cloudtrail.amazonaws.com"]
     }
-    condition { test = "StringEquals" variable = "aws:SourceArn" values = [local.trail_arn] }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values   = [local.trail_arn]
+    }
   }
   statement {
     sid       = "AWSCloudTrailWrite"
@@ -165,8 +176,16 @@ data "aws_iam_policy_document" "cloudtrail_bucket" {
       type        = "Service"
       identifiers = ["cloudtrail.amazonaws.com"]
     }
-    condition { test = "StringEquals" variable = "aws:SourceArn" values = [local.trail_arn] }
-    condition { test = "StringEquals" variable = "s3:x-amz-acl" values = ["bucket-owner-full-control"] }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values   = [local.trail_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "s3:x-amz-acl"
+      values   = ["bucket-owner-full-control"]
+    }
   }
 }
 
@@ -189,7 +208,10 @@ resource "aws_cloudwatch_log_group" "cloudtrail" {
 data "aws_iam_policy_document" "trail_cw_trust" {
   statement {
     actions = ["sts:AssumeRole"]
-    principals { type = "Service" identifiers = ["cloudtrail.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
   }
 }
 
