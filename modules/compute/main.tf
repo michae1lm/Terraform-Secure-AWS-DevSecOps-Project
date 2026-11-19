@@ -63,6 +63,6 @@ resource "aws_instance" "app" {
     volume_size = 8
     volume_type = "gp3"
   }
-  tags = { Name = "tfsec-private-ec2" }
+  tags       = { Name = "tfsec-private-ec2" }
   depends_on = [aws_iam_role_policy_attachment.ssm]
 }

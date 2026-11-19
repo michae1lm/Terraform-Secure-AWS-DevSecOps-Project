@@ -37,12 +37,12 @@ module "detection" {
 }
 
 module "compute" {
-  count              = var.enable_compute ? 1 : 0
-  source             = "../../modules/compute"
-  vpc_id             = module.network.vpc_id
-  vpc_cidr           = module.network.vpc_cidr
-  private_subnet_id  = module.network.private_subnet_ids[0]
-  ebs_kms_key_arn    = module.account_baseline.ebs_kms_key_arn
-  instance_type      = var.instance_type
-  depends_on         = [module.network]
+  count             = var.enable_compute ? 1 : 0
+  source            = "../../modules/compute"
+  vpc_id            = module.network.vpc_id
+  vpc_cidr          = module.network.vpc_cidr
+  private_subnet_id = module.network.private_subnet_ids[0]
+  ebs_kms_key_arn   = module.account_baseline.ebs_kms_key_arn
+  instance_type     = var.instance_type
+  depends_on        = [module.network]
 }

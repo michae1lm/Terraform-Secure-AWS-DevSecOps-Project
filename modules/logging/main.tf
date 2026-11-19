@@ -1,8 +1,8 @@
 locals {
-  trail_arn      = "arn:aws:cloudtrail:${var.aws_region}:${var.account_id}:trail/${var.trail_name}"
-  log_bucket     = "tfsec-trail-${var.account_id}-${var.aws_region}"
-  access_logs    = "tfsec-access-${var.account_id}-${var.aws_region}"
-  cw_log_group   = "/aws/cloudtrail/tfsec-lab"
+  trail_arn    = "arn:aws:cloudtrail:${var.aws_region}:${var.account_id}:trail/${var.trail_name}"
+  log_bucket   = "tfsec-trail-${var.account_id}-${var.aws_region}"
+  access_logs  = "tfsec-access-${var.account_id}-${var.aws_region}"
+  cw_log_group = "/aws/cloudtrail/tfsec-lab"
 }
 
 data "aws_iam_policy_document" "kms_logs" {
@@ -119,14 +119,14 @@ data "aws_iam_policy_document" "access_logs" {
       identifiers = ["logging.s3.amazonaws.com"]
     }
     condition {
-      test = "ArnLike"
+      test     = "ArnLike"
       variable = "aws:SourceArn"
-      values = ["arn:aws:s3:::${local.log_bucket}"]
+      values   = ["arn:aws:s3:::${local.log_bucket}"]
     }
     condition {
-      test = "StringEquals"
+      test     = "StringEquals"
       variable = "aws:SourceAccount"
-      values = [var.account_id]
+      values   = [var.account_id]
     }
   }
   statement {
@@ -190,13 +190,13 @@ data "aws_iam_policy_document" "cloudtrail_bucket" {
 }
 
 module "trail_bucket" {
-  source                  = "../secure-s3"
-  bucket_name             = local.log_bucket
-  kms_key_arn             = aws_kms_key.logs.arn
-  additional_policy_json  = data.aws_iam_policy_document.cloudtrail_bucket.json
-  access_log_bucket       = aws_s3_bucket.access_logs.id
-  lifecycle_days          = var.retention_days
-  depends_on              = [aws_s3_bucket_policy.access_logs]
+  source                 = "../secure-s3"
+  bucket_name            = local.log_bucket
+  kms_key_arn            = aws_kms_key.logs.arn
+  additional_policy_json = data.aws_iam_policy_document.cloudtrail_bucket.json
+  access_log_bucket      = aws_s3_bucket.access_logs.id
+  lifecycle_days         = var.retention_days
+  depends_on             = [aws_s3_bucket_policy.access_logs]
 }
 
 resource "aws_cloudwatch_log_group" "cloudtrail" {
@@ -222,8 +222,8 @@ resource "aws_iam_role" "trail_cloudwatch" {
 
 data "aws_iam_policy_document" "trail_to_cw" {
   statement {
-    effect = "Allow"
-    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    effect    = "Allow"
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
     resources = ["${aws_cloudwatch_log_group.cloudtrail.arn}:log-stream:*"]
   }
 }
@@ -244,5 +244,5 @@ resource "aws_cloudtrail" "main" {
   kms_key_id                    = aws_kms_key.logs.arn
   cloud_watch_logs_group_arn    = "${aws_cloudwatch_log_group.cloudtrail.arn}:*"
   cloud_watch_logs_role_arn     = aws_iam_role.trail_cloudwatch.arn
-  depends_on = [module.trail_bucket, aws_iam_role_policy.trail_to_cw]
+  depends_on                    = [module.trail_bucket, aws_iam_role_policy.trail_to_cw]
 }

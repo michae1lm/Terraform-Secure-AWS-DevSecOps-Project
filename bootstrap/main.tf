@@ -64,29 +64,29 @@ resource "aws_s3_bucket_lifecycle_configuration" "state_access_logs" {
 
 data "aws_iam_policy_document" "state_access_logs" {
   statement {
-    sid     = "AllowServerAccessLogging"
-    effect  = "Allow"
-    actions = ["s3:PutObject"]
+    sid       = "AllowServerAccessLogging"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.state_access_logs.arn}/state/*"]
     principals {
       type        = "Service"
       identifiers = ["logging.s3.amazonaws.com"]
     }
     condition {
-      test = "ArnLike"
+      test     = "ArnLike"
       variable = "aws:SourceArn"
-      values = ["arn:aws:s3:::${local.state_bucket}"]
+      values   = ["arn:aws:s3:::${local.state_bucket}"]
     }
     condition {
-      test = "StringEquals"
+      test     = "StringEquals"
       variable = "aws:SourceAccount"
-      values = [local.account_id]
+      values   = [local.account_id]
     }
   }
   statement {
-    sid     = "DenyInsecureTransport"
-    effect  = "Deny"
-    actions = ["s3:*"]
+    sid       = "DenyInsecureTransport"
+    effect    = "Deny"
+    actions   = ["s3:*"]
     resources = [aws_s3_bucket.state_access_logs.arn, "${aws_s3_bucket.state_access_logs.arn}/*"]
     principals {
       type        = "*"
@@ -172,11 +172,11 @@ resource "aws_s3_bucket_policy" "state" {
 # Bootstrap security principals use local, administrator-controlled state. The
 # deploy workflow cannot alter its own trust policies or administrator roles.
 module "github_oidc" {
-  source              = "../modules/github-oidc"
-  account_id          = local.account_id
-  github_owner        = var.github_owner
-  github_repo         = var.github_repo
-  state_bucket_name   = aws_s3_bucket.state.id
-  state_key           = "dev/terraform.tfstate"
-  state_kms_key_arn   = aws_kms_key.state.arn
+  source            = "../modules/github-oidc"
+  account_id        = local.account_id
+  github_owner      = var.github_owner
+  github_repo       = var.github_repo
+  state_bucket_name = aws_s3_bucket.state.id
+  state_key         = "dev/terraform.tfstate"
+  state_kms_key_arn = aws_kms_key.state.arn
 }

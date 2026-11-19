@@ -21,7 +21,7 @@ resource "aws_ebs_encryption_by_default" "this" {
 }
 
 resource "aws_ebs_default_kms_key" "this" {
-  key_arn = aws_kms_key.ebs.arn
+  key_arn    = aws_kms_key.ebs.arn
   depends_on = [aws_ebs_encryption_by_default.this]
 }
 

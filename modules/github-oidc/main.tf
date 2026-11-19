@@ -9,8 +9,8 @@ locals {
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
 }
 
 data "aws_iam_policy_document" "plan_trust" {
@@ -56,9 +56,9 @@ data "aws_iam_policy_document" "apply_trust" {
 }
 
 resource "aws_iam_role" "plan" {
-  name               = "tfsec-ci-plan"
-  description        = "Read-only Terraform plan identity for this GitHub repository"
-  assume_role_policy = data.aws_iam_policy_document.plan_trust.json
+  name                 = "tfsec-ci-plan"
+  description          = "Read-only Terraform plan identity for this GitHub repository"
+  assume_role_policy   = data.aws_iam_policy_document.plan_trust.json
   max_session_duration = 3600
 }
 
@@ -66,7 +66,7 @@ resource "aws_iam_role" "plan" {
 # No broad AWS managed ReadOnlyAccess policy (which can read unrelated S3 data).
 data "aws_iam_policy_document" "plan_read" {
   statement {
-    sid = "RefreshLabServices"
+    sid    = "RefreshLabServices"
     effect = "Allow"
     actions = [
       "ec2:Describe*", "ec2:GetEbsEncryptionByDefault", "ec2:GetEbsDefaultKmsKeyId",
@@ -82,9 +82,9 @@ data "aws_iam_policy_document" "plan_read" {
     resources = ["*"]
   }
   statement {
-    sid = "ReadPublicAmazonLinuxAMIParameter"
-    effect = "Allow"
-    actions = ["ssm:GetParameter"]
+    sid       = "ReadPublicAmazonLinuxAMIParameter"
+    effect    = "Allow"
+    actions   = ["ssm:GetParameter"]
     resources = ["arn:aws:ssm:*::parameter/aws/service/ami-amazon-linux-latest/*"]
   }
 }
@@ -116,9 +116,9 @@ data "aws_iam_policy_document" "plan_state" {
     actions   = ["s3:ListBucket"]
     resources = [local.state_arn]
     condition {
-      test = "StringLike"
+      test     = "StringLike"
       variable = "s3:prefix"
-      values = [var.state_key, "${var.state_key}.tflock"]
+      values   = [var.state_key, "${var.state_key}.tflock"]
     }
   }
   statement {
@@ -154,9 +154,9 @@ data "aws_iam_policy_document" "apply_extra" {
     actions   = ["s3:ListBucket"]
     resources = [local.state_arn]
     condition {
-      test = "StringLike"
+      test     = "StringLike"
       variable = "s3:prefix"
-      values = [var.state_key, "${var.state_key}.tflock"]
+      values   = [var.state_key, "${var.state_key}.tflock"]
     }
   }
   statement {
@@ -178,8 +178,8 @@ data "aws_iam_policy_document" "apply_extra" {
     resources = ["*"]
   }
   statement {
-    sid       = "ManageWorkloadServiceRoles"
-    effect    = "Allow"
+    sid    = "ManageWorkloadServiceRoles"
+    effect = "Allow"
     actions = [
       "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:UpdateAssumeRolePolicy",
       "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy",
@@ -200,8 +200,8 @@ data "aws_iam_policy_document" "apply_extra" {
     }
   }
   statement {
-    sid       = "ManageWorkloadInstanceProfiles"
-    effect    = "Allow"
+    sid    = "ManageWorkloadInstanceProfiles"
+    effect = "Allow"
     actions = [
       "iam:CreateInstanceProfile", "iam:DeleteInstanceProfile", "iam:GetInstanceProfile",
       "iam:AddRoleToInstanceProfile", "iam:RemoveRoleFromInstanceProfile",

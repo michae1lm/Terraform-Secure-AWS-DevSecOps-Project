@@ -6,7 +6,7 @@ resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = { Name = "tfsec-private-vpc" }
+  tags                 = { Name = "tfsec-private-vpc" }
 }
 
 resource "aws_subnet" "private" {
@@ -15,7 +15,7 @@ resource "aws_subnet" "private" {
   cidr_block              = cidrsubnet(var.vpc_cidr, 8, count.index + 10)
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   map_public_ip_on_launch = false
-  tags = { Name = "tfsec-private-${count.index + 1}" }
+  tags                    = { Name = "tfsec-private-${count.index + 1}" }
 }
 
 resource "aws_route_table" "private" {
@@ -58,7 +58,7 @@ resource "aws_vpc_endpoint" "s3" {
   service_name      = "com.amazonaws.${var.aws_region}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = [aws_route_table.private.id]
-  tags = { Name = "tfsec-s3-gateway" }
+  tags              = { Name = "tfsec-s3-gateway" }
 }
 
 locals {
@@ -73,7 +73,7 @@ resource "aws_vpc_endpoint" "ssm" {
   private_dns_enabled = true
   subnet_ids          = [aws_subnet.private[0].id]
   security_group_ids  = [aws_security_group.interface_endpoints.id]
-  tags = { Name = "tfsec-endpoint-${each.value}" }
+  tags                = { Name = "tfsec-endpoint-${each.value}" }
 }
 
 resource "aws_cloudwatch_log_group" "flow" {
