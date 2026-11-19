@@ -68,7 +68,10 @@ data "aws_iam_policy_document" "state_access_logs" {
     effect  = "Allow"
     actions = ["s3:PutObject"]
     resources = ["${aws_s3_bucket.state_access_logs.arn}/state/*"]
-    principals { type = "Service" identifiers = ["logging.s3.amazonaws.com"] }
+    principals {
+      type        = "Service"
+      identifiers = ["logging.s3.amazonaws.com"]
+    }
     condition {
       test = "ArnLike"
       variable = "aws:SourceArn"
@@ -85,8 +88,15 @@ data "aws_iam_policy_document" "state_access_logs" {
     effect  = "Deny"
     actions = ["s3:*"]
     resources = [aws_s3_bucket.state_access_logs.arn, "${aws_s3_bucket.state_access_logs.arn}/*"]
-    principals { type = "*" identifiers = ["*"] }
-    condition { test = "Bool" variable = "aws:SecureTransport" values = ["false"] }
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
   }
 }
 
@@ -142,8 +152,15 @@ data "aws_iam_policy_document" "state" {
     effect    = "Deny"
     actions   = ["s3:*"]
     resources = [aws_s3_bucket.state.arn, "${aws_s3_bucket.state.arn}/*"]
-    principals { type = "*" identifiers = ["*"] }
-    condition { test = "Bool" variable = "aws:SecureTransport" values = ["false"] }
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
   }
 }
 
