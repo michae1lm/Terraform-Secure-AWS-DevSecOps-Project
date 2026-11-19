@@ -1,0 +1,20 @@
+# Local credentials, Terraform artifacts, and remote state configuration
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/tfplan
+**/backend.hcl
+**/*.tfvars
+!**/*.tfvars.example
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+crash.log
+crash.*.log
+.terraform.tfstate.lock.info
+__pycache__/
+.pytest_cache/
+.DS_Store

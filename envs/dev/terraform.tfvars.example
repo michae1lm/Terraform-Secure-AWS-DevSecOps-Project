@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (ignored by Git); use only a dedicated personal account.
+aws_region               = "us-west-2"
+enable_guardduty         = true
+enable_private_endpoints = false
+enable_compute           = false
+instance_type            = "t3.micro"

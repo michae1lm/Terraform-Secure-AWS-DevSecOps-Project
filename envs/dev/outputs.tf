@@ -1,0 +1,9 @@
+output "aws_account_id" { value = data.aws_caller_identity.current.account_id }
+output "cloudtrail_arn" { value = module.logging.trail_arn }
+output "cloudtrail_log_bucket" { value = module.logging.log_bucket_name }
+output "vpc_id" { value = module.network.vpc_id }
+output "vpc_flow_log_id" { value = module.network.vpc_flow_log_id }
+output "private_subnet_ids" { value = module.network.private_subnet_ids }
+output "guardduty_detector_id" { value = module.detection.detector_id }
+output "ec2_instance_id" { value = var.enable_compute ? module.compute[0].instance_id : null }
+output "ssm_endpoints" { value = module.network.endpoint_ids }

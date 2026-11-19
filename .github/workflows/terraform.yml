@@ -1,0 +1,140 @@
+name: Terraform Secure AWS - Scan, Plan, Manual Apply
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY to authorize an approval-gated AWS apply'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-dev-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  TF_IN_AUTOMATION: 'true'
+  TF_INPUT: 'false'
+
+jobs:
+  scan:
+    name: Format / Validate / Secrets / Lint / Policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.0'
+      - name: Terraform format
+        run: terraform fmt -check -recursive
+      - name: Terraform validate (bootstrap)
+        run: |
+          terraform -chdir=bootstrap init -backend=false -input=false
+          terraform -chdir=bootstrap validate
+      - name: Terraform validate (dev)
+        run: |
+          terraform -chdir=envs/dev init -backend=false -input=false
+          terraform -chdir=envs/dev validate
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: terraform-linters/setup-tflint@v4
+      - name: TFLint
+        run: |
+          tflint --init
+          tflint --recursive
+      - name: Checkov (findings fail the job)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          framework: terraform
+          soft_fail: false
+
+  plan:
+    name: Trusted branches - remote plan
+    needs: scan
+    runs-on: ubuntu-latest
+    # Never expose state or AWS credentials to untrusted fork PRs.
+    if: >-
+      (github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository) &&
+      vars.PLAN_ROLE_ARN != '' &&
+      vars.TF_STATE_BUCKET != '' &&
+      vars.TF_STATE_KMS_KEY_ARN != ''
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.0'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: tfsec-plan
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+      - name: Configure backend
+        shell: bash
+        run: |
+          test -n '${{ vars.TF_STATE_BUCKET }}'
+          test -n '${{ vars.TF_STATE_KMS_KEY_ARN }}'
+          cat > envs/dev/backend.hcl <<BACKEND
+          bucket       = "${{ vars.TF_STATE_BUCKET }}"
+          key          = "dev/terraform.tfstate"
+          region       = "${{ env.AWS_REGION }}"
+          encrypt      = true
+          kms_key_id   = "${{ vars.TF_STATE_KMS_KEY_ARN }}"
+          use_lockfile = true
+          BACKEND
+      - name: Initialize and plan (read-only AWS role)
+        run: |
+          terraform -chdir=envs/dev init -backend-config=backend.hcl -input=false
+          terraform -chdir=envs/dev plan -input=false -no-color
+
+  apply:
+    name: Production environment review / Apply
+    needs: [scan, plan]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.confirmation == 'DEPLOY' && github.ref == 'refs/heads/main'
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.14.0'
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.APPLY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: tfsec-apply
+      - name: Configure backend
+        shell: bash
+        run: |
+          cat > envs/dev/backend.hcl <<BACKEND
+          bucket       = "${{ vars.TF_STATE_BUCKET }}"
+          key          = "dev/terraform.tfstate"
+          region       = "${{ env.AWS_REGION }}"
+          encrypt      = true
+          kms_key_id   = "${{ vars.TF_STATE_KMS_KEY_ARN }}"
+          use_lockfile = true
+          BACKEND
+      - name: Replan and apply from the SAME checked-out commit
+        run: |
+          terraform -chdir=envs/dev init -backend-config=backend.hcl -input=false
+          terraform -chdir=envs/dev plan -out=tfplan -input=false
+          terraform -chdir=envs/dev apply -input=false tfplan

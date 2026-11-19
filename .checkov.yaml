@@ -1,0 +1,8 @@
+framework:
+  - terraform
+soft-fail: false
+quiet: false
+skip-path:
+  - .terraform
+  - docs
+  - tests
